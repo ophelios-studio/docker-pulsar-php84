@@ -54,7 +54,7 @@ RUN update-locale
 RUN rm -rf /usr/src/*
 
 # Timezone
-ENV TZ "America/Montreal"
+ENV TZ="America/Montreal"
 
 # Mailcatcher
 RUN apt-get install -y rubygems ruby-dev sqlite3
