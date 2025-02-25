@@ -43,4 +43,4 @@ jobs:
           cache-to: type=local,dest=/tmp/.buildx-cache
           push: true
           tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
-          platforms: linux/${{ matrix.architecture }}
+          platforms: ${{ matrix.architecture }}
