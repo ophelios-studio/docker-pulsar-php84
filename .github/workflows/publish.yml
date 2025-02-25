@@ -48,4 +48,4 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
           push: true
           tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
-          platforms: ${{ matrix.architecture }}
+          platforms: ${{ matrix.platform }}
