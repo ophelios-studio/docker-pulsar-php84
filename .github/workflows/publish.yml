@@ -4,10 +4,14 @@ on: [push]
 
 jobs:
   publish-docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
     strategy:
       matrix:
-        architecture: [arm64, amd64]
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+          - runner: ubuntu-24.04-arm # Using a ARM runner to prevent QEMU emulation which is slow
+            platform: linux/arm64
 
     steps:
       - name: Checkout repository
