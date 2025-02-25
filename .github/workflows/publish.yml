@@ -10,8 +10,10 @@ jobs:
         include:
           - runner: ubuntu-latest
             platform: linux/amd64
+            architecture: amd64
           - runner: ubuntu-24.04-arm # Use an ARM runner to prevent QEMU emulation which is slow
             platform: linux/arm64
+            architecture: arm64
 
     steps:
       - name: Checkout repository
@@ -41,8 +43,8 @@ jobs:
           context: .
           # cache-from: type=local,src=/tmp/.buildx-cache
           # cache-to: type=local,dest=/tmp/.buildx-cache
-          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.platform }}
-          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.platform }},mode=max
+          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
+          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
           push: true
           tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
           platforms: ${{ matrix.architecture }}
