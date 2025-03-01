@@ -1,19 +1,40 @@
 name: Publish to ghcr
+
 on: [push]
+
 jobs:
   publish-docker-image:
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            platform: linux/amd64
+            architecture: amd64
+          - runner: ubuntu-24.04-arm # Use an ARM runner to prevent QEMU emulation which is slow
+            platform: linux/arm64
+            architecture: arm64
+
     steps:
-      - name: Checkout repository code
-        uses: actions/checkout@v2
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Login to GitHub Container Registry
-        uses: docker/login-action@v1
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build the Docker image
-        run: |
-          docker buildx create --use
-          docker buildx build --platform linux/arm64,linux/amd64 --tag ghcr.io/ophelios-studio/docker-pulsar-php84:latest --push .
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
+          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
+          push: true
+          tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
+          platforms: ${{ matrix.platform }}
