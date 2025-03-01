@@ -33,8 +33,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }}
-          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }},mode=max
+          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
+          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
           push: true
-          tags: ghcr.io/ophelios-studio/docker-pulsar-php84:latest
+          tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
           platforms: ${{ matrix.platform }}
