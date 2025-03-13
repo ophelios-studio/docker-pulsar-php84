@@ -1,6 +1,10 @@
-name: Publish to ghcr
+name: Build and Publish test image to GHCR 🚀
 
-on: [push]
+# For test images, we only want to build and publish the image when a pull request is opened or updated
+on:
+  pull_request:
+    branches:
+      - main
 
 jobs:
   publish-docker-image:
@@ -9,10 +13,8 @@ jobs:
       matrix:
         include:
           - runner: ubuntu-latest
-            platform: linux/amd64
             architecture: amd64
           - runner: ubuntu-24.04-arm # Use an ARM runner to prevent QEMU emulation which is slow
-            platform: linux/arm64
             architecture: arm64
 
     steps:
@@ -33,8 +35,8 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
-          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }}
-          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }},mode=max
+          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
+          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
           push: true
-          tags: ghcr.io/ophelios-studio/docker-pulsar-php84:latest
-          platforms: ${{ matrix.platform }}
+          tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest
+          platforms: linux/amd64,linux/arm64
