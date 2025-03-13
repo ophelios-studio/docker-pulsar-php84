@@ -35,7 +35,6 @@ jobs:
         with:
           context: .
           push: true
-          platforms: linux/${{ matrix.architecture }}
           tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:${{ matrix.architecture }}
           cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
           cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
