@@ -30,14 +30,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image with cache
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          push: true
-          tags: ghcr.io/ophelios-studio/docker-pulsar-php84-test:${{ matrix.architecture }}
-          cache-from: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }}
-          cache-to: type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max
+      - name: Build image
+        run: |
+          docker buildx build \
+            --platform linux/${{ matrix.architecture }} \
+            --cache-from=type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }} \
+            --cache-to=type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84-test:cache-${{ matrix.architecture }},mode=max \
+            --tag ghcr.io/ophelios-studio/docker-pulsar-php84-test:${{ matrix.architecture }} \
+            --output=type=image \
+            .
+
+      - name: Push image
+        run: |
+          docker push ghcr.io/ophelios-studio/docker-pulsar-php84-test:${{ matrix.architecture }}
 
   create-multiarch-manifest:
     needs: build-and-push
