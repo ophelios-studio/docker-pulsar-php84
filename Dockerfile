@@ -29,8 +29,8 @@ RUN docker-php-ext-install pdo_pgsql && \
     docker-php-ext-install gettext
 
 # Install ssh2
-RUN apt-get update
-RUN apt-get install -y git libssh2-1 libssh2-1-dev
+RUN apt-get update && apt-get install -y \
+    git libssh2-1 libssh2-1-dev
 RUN pecl install ssh2-1.3.1
 RUN docker-php-ext-enable ssh2
 
