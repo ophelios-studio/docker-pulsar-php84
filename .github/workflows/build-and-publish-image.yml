@@ -37,7 +37,7 @@ jobs:
             --cache-from=type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }} \
             --cache-to=type=registry,ref=ghcr.io/ophelios-studio/docker-pulsar-php84:cache-${{ matrix.architecture }},mode=max \
             --tag ghcr.io/ophelios-studio/docker-pulsar-php84:${{ matrix.architecture }} \
-            --output=type=image \
+            --load \
             .
 
       - name: Push image
