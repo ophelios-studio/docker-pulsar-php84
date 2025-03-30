@@ -48,16 +48,6 @@ jobs:
           push: false
           load: true
 
-      # - name: Build image
-      #   run: |
-      #     docker buildx build \
-      #       --platform linux/${{ matrix.architecture }} \
-      #       --cache-from=type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }} \
-      #       --cache-to=type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }},mode=max \
-      #       --tag ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }} \
-      #       --load \
-      #       .
-
       - name: Push image
         run: |
           docker push ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }}
