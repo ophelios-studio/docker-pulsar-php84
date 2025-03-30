@@ -53,7 +53,7 @@ jobs:
           docker push ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }}
 
   create-multiarch-manifest:
-    needs: build-docker-image
+    needs: publish-docker-image
     runs-on: ubuntu-latest
     steps:
       - name: Login to GitHub Container Registry
