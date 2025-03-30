@@ -1,0 +1,82 @@
+name: Publish Docker image to GHCR 🚀
+
+on:
+  workflow_call:
+    inputs:
+      image_name:
+        description: "Name of the image"
+        required: true
+        type: string
+      tag:
+        description: "Tag for the image (dev, latest, etc.)"
+        required: true
+        type: string
+
+jobs:
+  build-docker-image:
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        include:
+          - runner: ubuntu-latest
+            architecture: amd64
+          - runner: ubuntu-24.04-arm
+            architecture: arm64
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          cache-from: type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }}
+          cache-to: type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }},mode=max
+          tags: ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }}
+          platforms: linux/${{ matrix.architecture }}
+          push: false
+          load: true
+
+      # - name: Build image
+      #   run: |
+      #     docker buildx build \
+      #       --platform linux/${{ matrix.architecture }} \
+      #       --cache-from=type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }} \
+      #       --cache-to=type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }},mode=max \
+      #       --tag ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }} \
+      #       --load \
+      #       .
+
+      - name: Push image
+        run: |
+          docker push ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }}
+
+  create-multiarch-manifest:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    steps:
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create and push multi-arch manifest
+        run: |
+          docker manifest create ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ inputs.tag }} \
+            --amend ghcr.io/ophelios-studio/${{ inputs.image_name }}:amd64 \
+            --amend ghcr.io/ophelios-studio/${{ inputs.image_name }}:arm64
+
+          docker manifest push ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ inputs.tag }}
