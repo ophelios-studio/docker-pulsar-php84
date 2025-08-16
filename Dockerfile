@@ -35,8 +35,7 @@ RUN pecl install ssh2-1.3.1
 RUN docker-php-ext-enable ssh2
 
 RUN apt-get update && \
-    apt-get install -y libgmp-dev && \
-    rm -rf /var/lib/apt/lists/*
+    apt-get install -y libgmp-dev
 RUN docker-php-ext-install gmp
 
 # Install xdebug (but do not activate it)
