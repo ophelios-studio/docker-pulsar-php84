@@ -24,7 +24,6 @@ RUN docker-php-ext-install pdo_pgsql && \
     docker-php-ext-install zip && \
     docker-php-ext-install intl && \
     docker-php-ext-install xml && \
-    docker-php-ext-install gmp && \
     docker-php-ext-install mbstring && \
     docker-php-ext-install exif && \
     docker-php-ext-install gettext
@@ -34,6 +33,11 @@ RUN apt-get update && apt-get install -y \
     git libssh2-1 libssh2-1-dev
 RUN pecl install ssh2-1.3.1
 RUN docker-php-ext-enable ssh2
+
+RUN apt-get update && \
+    apt-get install -y libgmp-dev && \
+    rm -rf /var/lib/apt/lists/*
+RUN docker-php-ext-install gmp
 
 # Install xdebug (but do not activate it)
 RUN pecl install xdebug
