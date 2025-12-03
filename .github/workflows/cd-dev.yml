@@ -9,5 +9,5 @@ jobs:
   deploy:
     uses: ./.github/workflows/build-publish-docker.yml
     with:
-      image_name: "docker-pulsar-php84-test"
+      image_name: "docker-pulsar-php85-test"
       tag: "latest"
