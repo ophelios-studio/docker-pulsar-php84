@@ -39,11 +39,10 @@ RUN apt-get update && \
 RUN docker-php-ext-install gmp
 
 # Install xdebug (but do not activate it)
-RUN pecl config-set preferred_state alpha && \
-    pecl install xdebug && \
-    pecl config-set preferred_state stable
-RUN docker-php-ext-enable xdebug
-RUN cd /usr/local/etc/php/ && mkdir -p disabled/ && mv conf.d/docker-php-ext-xdebug.ini disabled/
+# Note: Will skip if no stable version available for current PHP version
+RUN pecl install xdebug || true
+RUN docker-php-ext-enable xdebug || true
+RUN cd /usr/local/etc/php/ && mkdir -p disabled/ && mv conf.d/docker-php-ext-xdebug.ini disabled/ || true
 
 # Enable apache modules
 RUN a2enmod rewrite headers expires ssl
