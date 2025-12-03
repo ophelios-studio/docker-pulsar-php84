@@ -39,7 +39,7 @@ RUN apt-get update && \
 RUN docker-php-ext-install gmp
 
 # Install xdebug (but do not activate it)
-RUN pecl install xdebug
+RUN pecl install xdebug-3.5.0alpha3
 RUN docker-php-ext-enable xdebug
 RUN cd /usr/local/etc/php/ && mkdir -p disabled/ && mv conf.d/docker-php-ext-xdebug.ini disabled/
 
