@@ -4,10 +4,11 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   deploy:
     uses: ./.github/workflows/build-publish-docker.yml
     with:
-      image_name: "docker-pulsar-php84"
+      image_name: "docker-pulsar-php85"
       tag: "latest"
