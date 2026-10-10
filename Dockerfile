@@ -71,6 +71,36 @@ COPY custom.ini /usr/local/etc/php/conf.d/base-custom.ini
 COPY vhosts/default.conf /etc/apache2/sites-enabled/default.conf
 COPY vhosts/default-ssl.conf /etc/apache2/sites-enabled/default-ssl.conf
 
+# AllowEncodedSlashes is not inherited from the server config into a <VirtualHost>, so it must sit inside every one,
+# or a path holding %2F (an encoded slash in a route parameter) gets Apache's own HTML 404 before PHP runs. The two
+# vhosts above carry it; Debian's 000-default.conf, still enabled and first on port 80, gets it here. The build fails
+# if any enabled <VirtualHost> is left without it (a downstream image adding its own vhost must add the line too).
+RUN set -eu; \
+    sed -i --follow-symlinks 's#^\([[:space:]]*<VirtualHost[^>]*>\)[[:space:]]*$#\1\n\tAllowEncodedSlashes NoDecode#' \
+        /etc/apache2/sites-enabled/000-default.conf; \
+    total="$(grep -hciE '^[[:space:]]*<VirtualHost[[:space:]>]' /etc/apache2/sites-enabled/*.conf | awk '{n += $1} END {print n + 0}')"; \
+    test "$total" -gt 0 || { echo "no <VirtualHost> is enabled" >&2; exit 1; }; \
+    for vhost in /etc/apache2/sites-enabled/*.conf; do \
+        vhosts="$(grep -ciE '^[[:space:]]*<VirtualHost[[:space:]>]' "$vhost" || true)"; \
+        patched="$(grep -ciE '^[[:space:]]*AllowEncodedSlashes[[:space:]]+NoDecode[[:space:]]*$' "$vhost" || true)"; \
+        test "$vhosts" = "$patched" || { echo "$vhost: $vhosts <VirtualHost>, $patched AllowEncodedSlashes NoDecode" >&2; exit 1; }; \
+    done; \
+    apache2ctl -t
+
+# Apache names its release and distribution ("Apache/2.4.62 (Debian)") in the Server header of every response and at
+# the foot of its own error pages, because Debian's security.conf ships ServerTokens OS and ServerSignature On. They
+# are rewritten in that file rather than overridden from another one, so each has a single value. The build fails
+# unless the enabled configuration holds exactly ServerTokens Prod and ServerSignature Off.
+RUN set -eu; \
+    sed -i \
+        -e 's#^[[:space:]]*ServerTokens[[:space:]].*$#ServerTokens Prod#I' \
+        -e 's#^[[:space:]]*ServerSignature[[:space:]].*$#ServerSignature Off#I' \
+        /etc/apache2/conf-available/security.conf; \
+    active="$(grep -hiE '^[[:space:]]*Server(Tokens|Signature)[[:space:]]' /etc/apache2/apache2.conf \
+        /etc/apache2/conf-enabled/*.conf /etc/apache2/sites-enabled/*.conf | sed 's#^[[:space:]]*##; s#[[:space:]]*$##' | sort -u)"; \
+    test "$active" = "$(printf 'ServerSignature Off\nServerTokens Prod')" || { echo "Server directives: $active" >&2; exit 1; }; \
+    apache2ctl -t
+
 # Configure and run Supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 EXPOSE 80 1080

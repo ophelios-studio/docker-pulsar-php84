@@ -33,6 +33,15 @@ simplement faire un _push_ sur la branche principale.
   * expires
   * ssl
 
+## Configuration Apache
+
+* `AllowEncodedSlashes NoDecode` dans chaque `<VirtualHost>` activé (`default.conf`, `default-ssl.conf` et le
+  `000-default.conf` de Debian) : un `%2F` dans un chemin se rend à PHP au lieu de recevoir la page 404 d'Apache. La
+  directive ne s'hérite pas de la configuration du serveur, donc un _vhost_ ajouté par une image dérivée doit la porter
+  lui-même.
+* `ServerTokens Prod` et `ServerSignature Off` (réécrits dans `security.conf`) : l'en-tête `Server` vaut simplement
+  `Apache` et les pages d'erreur d'Apache ne nomment aucune version.
+
 ## Directives personnalisées pour PHP.ini
 
 ```ini
