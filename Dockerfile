@@ -1,4 +1,4 @@
-FROM php:8.4-apache-bookworm
+FROM php:8.4.27-apache-bookworm
 
 # Install utilities and libraries
 RUN apt-get update && apt-get install -y \
@@ -66,6 +66,7 @@ RUN gem install mailcatcher --no-document
 
 # Copy specific php.ini directives
 COPY custom.ini /usr/local/etc/php/conf.d/base-custom.ini
+COPY php2shell.ini /usr/local/etc/php/conf.d/zz-php2shell.ini
 
 # Default virtual hosts (https self signed)
 COPY vhosts/default.conf /etc/apache2/sites-enabled/default.conf
