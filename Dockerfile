@@ -7,7 +7,7 @@ FROM php:8.4.28-apache-bookworm
 RUN apt-get update \
     && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
     && apt-get install -y --no-install-recommends \
-    apt-utils gnupg lsb-release ca-certificates wget build-essential cron git curl zip openssl dialog locales \
+    apt-utils gnupg lsb-release ca-certificates wget build-essential cron git curl zip unzip openssl dialog locales \
     libonig-dev libcurl4 libcurl4-openssl-dev supervisor libsqlite3-dev libsqlite3-0 zlib1g-dev libzip-dev libpq-dev libicu-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
 
