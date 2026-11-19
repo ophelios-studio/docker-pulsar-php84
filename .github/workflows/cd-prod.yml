@@ -4,6 +4,16 @@ on:
   push:
     branches:
       - main
+  # Every Monday the image is rebuilt without cache, from a fresh pull of the official image, so the security fixes of
+  # Debian and Apache reach :latest even when nothing is pushed here. A manual run rebuilds the same way.
+  schedule:
+    - cron: "0 7 * * 1"
+  workflow_dispatch:
+
+# A scheduled rebuild and a push never publish :latest at the same time.
+concurrency:
+  group: publish-latest
+  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -11,3 +21,4 @@ jobs:
     with:
       image_name: "docker-pulsar-php84"
       tag: "latest"
+      fresh: ${{ github.event_name != 'push' }}

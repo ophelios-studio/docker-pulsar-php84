@@ -11,6 +11,11 @@ on:
         description: "Tag for the image (dev, latest, etc.)"
         required: true
         type: string
+      fresh:
+        description: "Build without the layer cache, so every apt step runs again"
+        required: false
+        type: boolean
+        default: false
 
 jobs:
   publish-docker-image:
@@ -45,6 +50,8 @@ jobs:
           cache-to: type=registry,ref=ghcr.io/ophelios-studio/${{ inputs.image_name }}:cache-${{ matrix.architecture }},mode=max
           tags: ghcr.io/ophelios-studio/${{ inputs.image_name }}:${{ matrix.architecture }}
           platforms: linux/${{ matrix.architecture }}
+          pull: true
+          no-cache: ${{ inputs.fresh }}
           push: false
           load: true
 

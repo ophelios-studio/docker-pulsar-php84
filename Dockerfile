@@ -1,7 +1,12 @@
 FROM php:8.4.28-apache-bookworm
 
-# Install utilities and libraries
-RUN apt-get update && apt-get install -y \
+# Install utilities and libraries. No package brings its recommendations along (that alone kept exim4, a setuid MTA,
+# and openssh-client in the image), and the Debian packages of the official image are brought up to date first, so
+# the weekly rebuild takes their security fixes even before the official image is rebuilt. Each apt step empties the
+# package lists it downloaded.
+RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -y -o Dpkg::Options::=--force-confdef -o Dpkg::Options::=--force-confold \
+    && apt-get install -y --no-install-recommends \
     apt-utils gnupg lsb-release ca-certificates wget build-essential cron git curl zip openssl dialog locales \
     libonig-dev libcurl4 libcurl4-openssl-dev supervisor libsqlite3-dev libsqlite3-0 zlib1g-dev libzip-dev libpq-dev libicu-dev libfreetype6-dev libjpeg62-turbo-dev libpng-dev libxml2-dev \
     && rm -rf /var/lib/apt/lists/*
@@ -29,13 +34,15 @@ RUN docker-php-ext-install pdo_pgsql && \
     docker-php-ext-install gettext
 
 # Install ssh2
-RUN apt-get update && apt-get install -y \
-    git libssh2-1 libssh2-1-dev
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    git libssh2-1 libssh2-1-dev \
+    && rm -rf /var/lib/apt/lists/*
 RUN pecl install ssh2-1.3.1
 RUN docker-php-ext-enable ssh2
 
 RUN apt-get update && \
-    apt-get install -y libgmp-dev
+    apt-get install -y --no-install-recommends libgmp-dev && \
+    rm -rf /var/lib/apt/lists/*
 RUN docker-php-ext-install gmp
 
 # Install xdebug (but do not activate it)
@@ -43,8 +50,11 @@ RUN pecl install xdebug
 RUN docker-php-ext-enable xdebug
 RUN cd /usr/local/etc/php/ && mkdir -p disabled/ && mv conf.d/docker-php-ext-xdebug.ini disabled/
 
-# Enable apache modules
-RUN a2enmod rewrite headers expires ssl
+# Enable apache modules. mod_status is turned off: nothing reads /server-status, and a single line of configuration
+# would otherwise reopen the request line of every request in flight. The build fails if it is still enabled.
+RUN a2enmod rewrite headers expires ssl \
+    && a2dismod status \
+    && test ! -e /etc/apache2/mods-enabled/status.load
 
 # Install SSL certificates (self-signed)
 RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
@@ -61,7 +71,8 @@ RUN rm -rf /usr/src/*
 ENV TZ="America/Montreal"
 
 # Mailcatcher
-RUN apt-get install -y rubygems ruby-dev sqlite3
+RUN apt-get update && apt-get install -y --no-install-recommends rubygems ruby-dev sqlite3 \
+    && rm -rf /var/lib/apt/lists/*
 RUN gem install mailcatcher --no-document
 
 # Copy specific php.ini directives

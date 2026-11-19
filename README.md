@@ -41,6 +41,7 @@ simplement faire un _push_ sur la branche principale.
   lui-même.
 * `ServerTokens Prod` et `ServerSignature Off` (réécrits dans `security.conf`) : l'en-tête `Server` vaut simplement
   `Apache` et les pages d'erreur d'Apache ne nomment aucune version.
+* `mod_status` est désactivé : aucune page `/server-status`. La construction échoue s'il est encore activé.
 
 ## Directives personnalisées pour PHP.ini
 
@@ -52,3 +53,17 @@ xdebug.output_dir='/xdebug.d'
 xdebug.mode = profile
 xdebug.use_compression = true
 ```
+
+## Publication
+
+* Un _push_ sur `main` publie `ghcr.io/ophelios-studio/docker-pulsar-php84:latest`.
+* Une _pull request_ vers `main` publie `ghcr.io/ophelios-studio/docker-pulsar-php84-test:latest`.
+* Chaque lundi à 7 h UTC, `CD - Prod` reconstruit l'image sans cache, depuis l'image officielle tirée à
+  nouveau, et republie `latest` : les correctifs de sécurité de Debian et d'Apache y entrent même quand rien n'est
+  poussé ici. Un lancement manuel de `CD - Prod` fait la même reconstruction. GitHub suspend une tâche planifiée après
+  60 jours sans activité dans un dépôt public : la réactiver dans l'onglet _Actions_ si cela arrive.
+* Une application reçoit ces correctifs à sa propre construction, si elle tire l'image à nouveau (`docker build
+  --pull`).
+* Les paquets Debian sont mis à jour à chaque construction et installés sans leurs recommandations
+  (`--no-install-recommends`) : ni `exim4` ni le client `ssh` ne sont dans l'image. Une image dérivée qui en a besoin
+  les installe elle-même.
