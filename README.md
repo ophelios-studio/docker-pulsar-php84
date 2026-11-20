@@ -31,17 +31,28 @@ simplement faire un _push_ sur la branche principale.
   * rewrite
   * headers
   * expires
-  * ssl
 
 ## Configuration Apache
 
-* `AllowEncodedSlashes NoDecode` dans chaque `<VirtualHost>` activé (`default.conf`, `default-ssl.conf` et le
-  `000-default.conf` de Debian) : un `%2F` dans un chemin se rend à PHP au lieu de recevoir la page 404 d'Apache. La
-  directive ne s'hérite pas de la configuration du serveur, donc un _vhost_ ajouté par une image dérivée doit la porter
-  lui-même.
+* `AllowEncodedSlashes NoDecode` dans chaque `<VirtualHost>` activé (`default.conf` et le `000-default.conf` de
+  Debian) : un `%2F` dans un chemin se rend à PHP au lieu de recevoir la page 404 d'Apache. La directive ne s'hérite
+  pas de la configuration du serveur, donc un _vhost_ ajouté par une image dérivée doit la porter lui-même.
 * `ServerTokens Prod` et `ServerSignature Off` (réécrits dans `security.conf`) : l'en-tête `Server` vaut simplement
   `Apache` et les pages d'erreur d'Apache ne nomment aucune version.
 * `mod_status` est désactivé : aucune page `/server-status`. La construction échoue s'il est encore activé.
+* Aucun TLS dans l'image : ni `mod_ssl`, ni _vhost_ 443, ni clé privée. Le TLS se termine devant le conteneur (Caddy
+  ou la périphérie de l'hébergeur). La construction échoue si `ssl_module` est chargé ou si `default-ssl.conf` est
+  activé.
+
+## Retrait de mod_ssl (novembre 2026)
+
+Jusqu'en novembre 2026, l'image activait `mod_ssl`, copiait `default-ssl.conf` en fichier dans `sites-enabled` (donc
+hors de portée de `a2dissite`) et générait une clé auto-signée à la construction. Une image dérivée qui retirait
+elle-même ce _vhost_ ou ce module se construit encore si elle tolère leur absence :
+
+* supprimer un fichier avec `rm -f`, jamais `rm` seul, qui échoue quand le fichier n'existe pas;
+* `a2dismod ssl`, comme `a2dismod status`, rend 0 sur un module déjà désactivé et 1 seulement quand ses fichiers ont
+  disparu de `mods-available`. L'image les garde exprès, et sa construction échoue s'ils disparaissent.
 
 ## Directives personnalisées pour PHP.ini
 
