@@ -52,12 +52,9 @@ RUN cd /usr/local/etc/php/ && mkdir -p disabled/ && mv conf.d/docker-php-ext-xde
 
 # Enable apache modules. mod_status is turned off: nothing reads /server-status, and a single line of configuration
 # would otherwise reopen the request line of every request in flight. The build fails if it is still enabled.
-RUN a2enmod rewrite headers expires ssl \
+RUN a2enmod rewrite headers expires \
     && a2dismod status \
     && test ! -e /etc/apache2/mods-enabled/status.load
-
-# Install SSL certificates (self-signed)
-RUN openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/private/apache-selfsigned.key -out /etc/ssl/certs/apache-selfsigned.crt -subj "/C=US/ST=State/L=City/O=Organization/CN=localhost"
 
 # Install french language locale
 RUN locale-gen en_CA.UTF-8
@@ -79,13 +76,12 @@ RUN gem install mailcatcher --no-document
 COPY custom.ini /usr/local/etc/php/conf.d/base-custom.ini
 COPY php2shell.ini /usr/local/etc/php/conf.d/zz-php2shell.ini
 
-# Default virtual hosts (https self signed)
+# Default virtual host, port 80 only
 COPY vhosts/default.conf /etc/apache2/sites-enabled/default.conf
-COPY vhosts/default-ssl.conf /etc/apache2/sites-enabled/default-ssl.conf
 
 # AllowEncodedSlashes is not inherited from the server config into a <VirtualHost>, so it must sit inside every one,
-# or a path holding %2F (an encoded slash in a route parameter) gets Apache's own HTML 404 before PHP runs. The two
-# vhosts above carry it; Debian's 000-default.conf, still enabled and first on port 80, gets it here. The build fails
+# or a path holding %2F (an encoded slash in a route parameter) gets Apache's own HTML 404 before PHP runs. The vhost
+# above carries it; Debian's 000-default.conf, still enabled and first on port 80, gets it here. The build fails
 # if any enabled <VirtualHost> is left without it (a downstream image adding its own vhost must add the line too).
 RUN set -eu; \
     sed -i --follow-symlinks 's#^\([[:space:]]*<VirtualHost[^>]*>\)[[:space:]]*$#\1\n\tAllowEncodedSlashes NoDecode#' \
@@ -112,6 +108,19 @@ RUN set -eu; \
         /etc/apache2/conf-enabled/*.conf /etc/apache2/sites-enabled/*.conf | sed 's#^[[:space:]]*##; s#[[:space:]]*$##' | sort -u)"; \
     test "$active" = "$(printf 'ServerSignature Off\nServerTokens Prod')" || { echo "Server directives: $active" >&2; exit 1; }; \
     apache2ctl -t
+
+# No TLS in the image: it ends in front of the container (Caddy, or the platform's edge), so there is no mod_ssl, no
+# 443 vhost and no private key, which anyone pulling this public image would hold. The files of mod_ssl and
+# mod_status stay in mods-available: `a2dismod ssl` or `a2dismod status` in a downstream image returns 0 on a module
+# already off, but 1 once its files are gone. The build fails if any of this changes.
+RUN set -eu; \
+    test ! -e /etc/apache2/sites-enabled/default-ssl.conf; \
+    test ! -e /etc/ssl/private/apache-selfsigned.key; \
+    test -e /etc/apache2/mods-available/ssl.load; \
+    test -e /etc/apache2/mods-available/status.load; \
+    modules="$(apache2ctl -M 2>/dev/null)"; \
+    printf '%s\n' "$modules" | grep -q ' rewrite_module ' || { echo "apache2ctl -M listed no module" >&2; exit 1; }; \
+    if printf '%s\n' "$modules" | grep -qE ' (ssl|status)_module '; then echo "ssl or status is loaded" >&2; exit 1; fi
 
 # Configure and run Supervisor
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
